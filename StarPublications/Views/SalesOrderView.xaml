@@ -1,0 +1,169 @@
+<UserControl x:Class="StarPublications.Views.SalesOrderView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:StarPublications.ViewModels">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Page heading -->
+        <TextBlock Grid.Row="0" Text="Sales Order Management"
+                   Style="{StaticResource HeadingStyle}"
+                   Margin="0,0,0,12"/>
+
+        <!-- Search/Filter panel -->
+        <Border Grid.Row="1" Style="{StaticResource CardPanelStyle}" Margin="0,0,0,10">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="Order #:" Style="{StaticResource LabelStyle}" Margin="0,0,8,0"/>
+                <TextBox Width="160"
+                         Text="{Binding SearchOrderNumber, UpdateSourceTrigger=PropertyChanged}"
+                         Style="{StaticResource ModernTextBoxStyle}"
+                         Margin="0,0,16,0"/>
+
+                <TextBlock Text="Store ID:" Style="{StaticResource LabelStyle}" Margin="0,0,8,0"/>
+                <TextBox Width="100"
+                         Text="{Binding SearchStoreId, UpdateSourceTrigger=PropertyChanged}"
+                         Style="{StaticResource ModernTextBoxStyle}"
+                         Margin="0,0,16,0"/>
+
+                <Button Content="🔍 Search"
+                        Style="{StaticResource PrimaryButtonStyle}"
+                        Command="{Binding SearchCommand}"/>
+                <Button Content="✖ Clear"
+                        Style="{StaticResource SecondaryButtonStyle}"
+                        Command="{Binding ClearSearchCommand}"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Main content area -->
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Left: toolbar + data grid -->
+            <Grid Grid.Column="0" Margin="0,0,8,0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8">
+                    <Button Content="＋ Add New"
+                            Style="{StaticResource AccentButtonStyle}"
+                            Command="{Binding AddNewCommand}"/>
+                    <Button Content="✏ Edit"
+                            Style="{StaticResource PrimaryButtonStyle}"
+                            Command="{Binding EditCommand}"/>
+                    <Button Content="🗑 Delete"
+                            Style="{StaticResource DangerButtonStyle}"
+                            Command="{Binding DeleteCommand}"/>
+                    <Button Content="🔄 Refresh"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Command="{Binding LoadDataCommand}"/>
+                    <TextBlock Text="  Loading…"
+                               Style="{StaticResource LoadingTextStyle}"
+                               Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <DataGrid Grid.Row="1"
+                          Style="{StaticResource ModernDataGridStyle}"
+                          ItemsSource="{Binding SalesOrders}"
+                          SelectedItem="{Binding SelectedSale}">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Store ID"   Binding="{Binding StorId}"   Width="70"/>
+                        <DataGridTextColumn Header="Store Name" Binding="{Binding Store.StorName}" Width="130"/>
+                        <DataGridTextColumn Header="Order #"    Binding="{Binding OrdNum}"   Width="120"/>
+                        <DataGridTextColumn Header="Date"       Binding="{Binding OrdDate, StringFormat=\{0:yyyy-MM-dd\}}" Width="100"/>
+                        <DataGridTextColumn Header="Qty"        Binding="{Binding Qty}"      Width="55"/>
+                        <DataGridTextColumn Header="Pay Terms"  Binding="{Binding PayTerms}" Width="90"/>
+                        <DataGridTextColumn Header="Title ID"   Binding="{Binding TitleId}"  Width="70"/>
+                        <DataGridTextColumn Header="Book Title" Binding="{Binding Title.TitleName}" Width="*"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Grid>
+
+            <!-- Right: Edit form (visible when IsEditing = True) -->
+            <Border Grid.Column="1"
+                    Style="{StaticResource CardPanelStyle}"
+                    Width="320"
+                    Visibility="{Binding IsEditing, Converter={StaticResource BoolToVisibilityConverter}}">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Width="280">
+                        <TextBlock Text="Sales Order Details"
+                                   Style="{StaticResource SubHeadingStyle}"
+                                   Margin="0,0,0,12"/>
+
+                        <TextBlock Text="Store *" Style="{StaticResource LabelStyle}"/>
+                        <ComboBox Margin="0,4,0,10"
+                                  Style="{StaticResource ModernComboBoxStyle}"
+                                  ItemsSource="{Binding Stores}"
+                                  SelectedValuePath="StorId"
+                                  SelectedValue="{Binding EditStorId}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding StorName}"/>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+
+                        <TextBlock Text="Order Number *" Style="{StaticResource LabelStyle}"/>
+                        <TextBox Margin="0,4,0,10"
+                                 Style="{StaticResource ModernTextBoxStyle}"
+                                 Text="{Binding EditOrdNum, UpdateSourceTrigger=PropertyChanged}"/>
+
+                        <TextBlock Text="Order Date *" Style="{StaticResource LabelStyle}"/>
+                        <DatePicker Margin="0,4,0,10"
+                                    SelectedDate="{Binding EditOrdDate}"
+                                    FontSize="13"/>
+
+                        <TextBlock Text="Quantity *" Style="{StaticResource LabelStyle}"/>
+                        <TextBox Margin="0,4,0,10"
+                                 Style="{StaticResource ModernTextBoxStyle}"
+                                 Text="{Binding EditQty, UpdateSourceTrigger=PropertyChanged}"/>
+
+                        <TextBlock Text="Payment Terms *" Style="{StaticResource LabelStyle}"/>
+                        <TextBox Margin="0,4,0,10"
+                                 Style="{StaticResource ModernTextBoxStyle}"
+                                 Text="{Binding EditPayTerms, UpdateSourceTrigger=PropertyChanged}"/>
+
+                        <TextBlock Text="Book Title *" Style="{StaticResource LabelStyle}"/>
+                        <ComboBox Margin="0,4,0,16"
+                                  Style="{StaticResource ModernComboBoxStyle}"
+                                  ItemsSource="{Binding Titles}"
+                                  SelectedValuePath="TitleId"
+                                  SelectedValue="{Binding EditTitleId}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding TitleName}"/>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <Button Content="💾 Save"
+                                    Style="{StaticResource PrimaryButtonStyle}"
+                                    Command="{Binding SaveCommand}"/>
+                            <Button Content="✖ Cancel"
+                                    Style="{StaticResource SecondaryButtonStyle}"
+                                    Command="{Binding CancelEditCommand}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+        </Grid>
+
+        <!-- Error message -->
+        <TextBlock Grid.Row="3"
+                   Text="{Binding ErrorMessage}"
+                   Style="{StaticResource ErrorTextStyle}"
+                   Visibility="{Binding ErrorMessage, Converter={StaticResource StringToVisibilityConverter}}"/>
+    </Grid>
+</UserControl>

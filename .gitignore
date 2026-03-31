@@ -1,0 +1,29 @@
+## Star Publications — .gitignore
+
+# Build artifacts
+**/bin/
+**/obj/
+**/*.user
+**/.vs/
+
+# NuGet packages
+**/packages/
+**/*.nupkg
+
+# Visual Studio
+*.suo
+*.vspscc
+*.vssscc
+.builds
+
+# Rider / JetBrains
+.idea/
+*.sln.iml
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Publish output
+**/publish/
