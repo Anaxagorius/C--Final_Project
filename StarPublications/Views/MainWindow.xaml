@@ -1,0 +1,83 @@
+<Window x:Class="StarPublications.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:StarPublications.ViewModels"
+        xmlns:views="clr-namespace:StarPublications.Views"
+        Title="Star Publications — Sales Order Management"
+        Height="720" Width="1100"
+        MinHeight="600" MinWidth="900"
+        WindowStartupLocation="CenterScreen"
+        Background="{StaticResource BackgroundBrush}">
+
+    <Window.DataContext>
+        <vm:MainViewModel/>
+    </Window.DataContext>
+
+    <!-- DataTemplates map ViewModels to their Views -->
+    <Window.Resources>
+        <DataTemplate DataType="{x:Type vm:SalesOrderViewModel}">
+            <views:SalesOrderView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:BookSearchViewModel}">
+            <views:BookSearchView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:PublisherSearchViewModel}">
+            <views:PublisherSearchView/>
+        </DataTemplate>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>  <!-- Header / brand bar -->
+            <RowDefinition Height="Auto"/>  <!-- Navigation bar -->
+            <RowDefinition Height="*"/>     <!-- Content area -->
+            <RowDefinition Height="Auto"/>  <!-- Status bar -->
+        </Grid.RowDefinitions>
+
+        <!-- ── Header ────────────────────────────────────────────────────── -->
+        <Border Grid.Row="0" Background="{StaticResource PrimaryBrush}">
+            <StackPanel Orientation="Horizontal" Margin="20,12">
+                <TextBlock Text="📚" FontSize="26" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                <StackPanel>
+                    <TextBlock Text="Star Publications"
+                               FontSize="22" FontWeight="Bold"
+                               Foreground="White"/>
+                    <TextBlock Text="Sales Order Management Subsystem"
+                               FontSize="11"
+                               Foreground="#B0BEC5"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <!-- ── Navigation bar ────────────────────────────────────────────── -->
+        <Border Grid.Row="1" Background="{StaticResource PrimaryLightBrush}">
+            <StackPanel Orientation="Horizontal">
+                <Button Content="🛒  Sales Orders"
+                        Style="{StaticResource NavButtonStyle}"
+                        Command="{Binding ShowSalesOrdersCommand}"/>
+                <Button Content="📖  Books"
+                        Style="{StaticResource NavButtonStyle}"
+                        Command="{Binding ShowBooksCommand}"/>
+                <Button Content="🏢  Publishers"
+                        Style="{StaticResource NavButtonStyle}"
+                        Command="{Binding ShowPublishersCommand}"/>
+            </StackPanel>
+        </Border>
+
+        <!-- ── Content area (ContentControl swaps child views) ───────────── -->
+        <ContentControl Grid.Row="2"
+                        Content="{Binding CurrentView}"
+                        Margin="12"/>
+
+        <!-- ── Status bar ────────────────────────────────────────────────── -->
+        <Border Grid.Row="3"
+                Background="#EEEEEE"
+                BorderBrush="{StaticResource BorderBrush}"
+                BorderThickness="0,1,0,0">
+            <TextBlock Text="{Binding StatusMessage}"
+                       FontSize="12"
+                       Foreground="{StaticResource TextSecondaryBrush}"
+                       Margin="12,5"/>
+        </Border>
+    </Grid>
+</Window>

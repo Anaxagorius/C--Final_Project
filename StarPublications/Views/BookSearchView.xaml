@@ -1,0 +1,145 @@
+<UserControl x:Class="StarPublications.Views.BookSearchView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Page heading -->
+        <TextBlock Grid.Row="0" Text="Book Search and Display"
+                   Style="{StaticResource HeadingStyle}"
+                   Margin="0,0,0,12"/>
+
+        <!-- Search panel -->
+        <Border Grid.Row="1" Style="{StaticResource CardPanelStyle}" Margin="0,0,0,10">
+            <StackPanel Orientation="Horizontal" Margin="0,2">
+                <TextBlock Text="Title:"     Style="{StaticResource LabelStyle}" Margin="0,0,6,0"/>
+                <TextBox Width="150" Style="{StaticResource ModernTextBoxStyle}"
+                         Text="{Binding SearchTitle, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,14,0"/>
+
+                <TextBlock Text="Type:"     Style="{StaticResource LabelStyle}" Margin="0,0,6,0"/>
+                <TextBox Width="100" Style="{StaticResource ModernTextBoxStyle}"
+                         Text="{Binding SearchType, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,14,0"/>
+
+                <TextBlock Text="Publisher:" Style="{StaticResource LabelStyle}" Margin="0,0,6,0"/>
+                <TextBox Width="150" Style="{StaticResource ModernTextBoxStyle}"
+                         Text="{Binding SearchPublisher, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,14,0"/>
+
+                <TextBlock Text="Author:"   Style="{StaticResource LabelStyle}" Margin="0,0,6,0"/>
+                <TextBox Width="140" Style="{StaticResource ModernTextBoxStyle}"
+                         Text="{Binding SearchAuthor, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,14,0"/>
+
+                <Button Content="🔍 Search" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding SearchCommand}"/>
+                <Button Content="✖ Clear"   Style="{StaticResource SecondaryButtonStyle}" Command="{Binding ClearCommand}"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Main content -->
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="320"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Book grid -->
+            <Grid Grid.Column="0" Margin="0,0,8,0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8">
+                    <Button Content="📚 Load All" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding LoadAllCommand}"/>
+                    <TextBlock Text="  Loading…"
+                               Style="{StaticResource LoadingTextStyle}"
+                               Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <DataGrid Grid.Row="1"
+                          Style="{StaticResource ModernDataGridStyle}"
+                          ItemsSource="{Binding Titles}"
+                          SelectedItem="{Binding SelectedTitle}">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Title ID"   Binding="{Binding TitleId}"   Width="70"/>
+                        <DataGridTextColumn Header="Title"      Binding="{Binding TitleName}"  Width="*"/>
+                        <DataGridTextColumn Header="Type"       Binding="{Binding Type}"       Width="90"/>
+                        <DataGridTextColumn Header="Publisher"  Binding="{Binding Publisher.PubName}" Width="130"/>
+                        <DataGridTextColumn Header="Price"      Binding="{Binding Price, Converter={StaticResource NullableCurrencyConverter}}" Width="80"/>
+                        <DataGridTextColumn Header="YTD Sales"  Binding="{Binding YtdSales}"   Width="80"/>
+                        <DataGridTextColumn Header="Pub Date"   Binding="{Binding PubDate, StringFormat=\{0:yyyy-MM-dd\}}" Width="100"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Grid>
+
+            <!-- Detail panel (always visible, shows placeholder when nothing selected) -->
+            <Border Grid.Column="1" Style="{StaticResource CardPanelStyle}">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <TextBlock Text="Book Details"
+                                   Style="{StaticResource SubHeadingStyle}"
+                                   Margin="0,0,0,12"/>
+
+                        <!-- Placeholder when nothing selected -->
+                        <TextBlock Text="← Select a book to view details"
+                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   FontStyle="Italic"
+                                   Visibility="{Binding SelectedTitle, Converter={StaticResource NullToVisibilityConverter}, ConverterParameter=Invert}"/>
+
+                        <!-- Detail content when book is selected -->
+                        <StackPanel Visibility="{Binding SelectedTitle, Converter={StaticResource NullToVisibilityConverter}}">
+                            <TextBlock Text="Title:" Style="{StaticResource LabelStyle}"/>
+                            <TextBlock Text="{Binding SelectedTitle.TitleName}"
+                                       TextWrapping="Wrap" FontSize="14" FontWeight="SemiBold"
+                                       Foreground="{StaticResource TextPrimaryBrush}" Margin="0,2,0,10"/>
+
+                            <TextBlock Text="Type:" Style="{StaticResource LabelStyle}"/>
+                            <TextBlock Text="{Binding SelectedTitle.Type}" Margin="0,2,0,10"
+                                       Foreground="{StaticResource TextPrimaryBrush}"/>
+
+                            <TextBlock Text="Price:" Style="{StaticResource LabelStyle}"/>
+                            <TextBlock Text="{Binding SelectedTitle.Price, Converter={StaticResource NullableCurrencyConverter}}"
+                                       Margin="0,2,0,10" Foreground="{StaticResource TextPrimaryBrush}"/>
+
+                            <TextBlock Text="Publisher:" Style="{StaticResource LabelStyle}"/>
+                            <TextBlock Text="{Binding SelectedTitle.Publisher.PubName}"
+                                       Margin="0,2,0,10" Foreground="{StaticResource TextPrimaryBrush}"/>
+
+                            <TextBlock Text="YTD Sales:" Style="{StaticResource LabelStyle}"/>
+                            <TextBlock Text="{Binding SelectedTitle.YtdSales}"
+                                       Margin="0,2,0,10" Foreground="{StaticResource TextPrimaryBrush}"/>
+
+                            <TextBlock Text="Notes:" Style="{StaticResource LabelStyle}"/>
+                            <TextBlock Text="{Binding SelectedTitle.Notes}"
+                                       TextWrapping="Wrap" Margin="0,2,0,10"
+                                       Foreground="{StaticResource TextPrimaryBrush}"/>
+
+                            <Separator Margin="0,4,0,8"/>
+
+                            <TextBlock Text="Authors:" Style="{StaticResource SubHeadingStyle}"/>
+                            <TextBlock Text="{Binding DetailAuthors}"
+                                       TextWrapping="Wrap" Margin="0,2,0,10"
+                                       Foreground="{StaticResource TextPrimaryBrush}"/>
+
+                            <TextBlock Text="Available at Stores:" Style="{StaticResource SubHeadingStyle}"/>
+                            <TextBlock Text="{Binding DetailStores}"
+                                       TextWrapping="Wrap" Margin="0,2,0,0"
+                                       Foreground="{StaticResource TextPrimaryBrush}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+        </Grid>
+
+        <!-- Error message -->
+        <TextBlock Grid.Row="3"
+                   Text="{Binding ErrorMessage}"
+                   Style="{StaticResource ErrorTextStyle}"
+                   Visibility="{Binding ErrorMessage, Converter={StaticResource StringToVisibilityConverter}}"/>
+    </Grid>
+</UserControl>
