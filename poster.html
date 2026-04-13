@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Star Publications — Poster</title>
+  <style>
+    /* ── Reset & base ─────────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f0f2f5;
+      color: #1a1a2e;
+      line-height: 1.45;
+    }
+
+    /* ── Print: A0 landscape ─────────────────────────────────────────────── */
+    @page { size: A0 landscape; margin: 10mm; }
+    @media print {
+      body { background: #fff; }
+      .poster { box-shadow: none; }
+    }
+
+    /* ── Poster shell ────────────────────────────────────────────────────── */
+    .poster {
+      max-width: 1600px;
+      margin: 24px auto;
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 8px 40px rgba(0,0,0,.18);
+      overflow: hidden;
+    }
+
+    /* ── Header ──────────────────────────────────────────────────────────── */
+    .header {
+      background: linear-gradient(135deg, #1a237e 0%, #3949ab 60%, #5c6bc0 100%);
+      color: #fff;
+      padding: 36px 48px 28px;
+      display: flex;
+      align-items: center;
+      gap: 32px;
+    }
+    .header-logo {
+      font-size: 52px;
+      line-height: 1;
+    }
+    .header-text h1 {
+      font-size: 2.8rem;
+      font-weight: 800;
+      letter-spacing: .5px;
+      margin-bottom: 6px;
+    }
+    .header-text .subtitle {
+      font-size: 1.15rem;
+      opacity: .88;
+      font-weight: 400;
+    }
+    .header-text .objective {
+      margin-top: 10px;
+      font-size: 1rem;
+      opacity: .82;
+      max-width: 900px;
+    }
+
+    /* ── Section titles ──────────────────────────────────────────────────── */
+    .section-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: #1a237e;
+      border-bottom: 3px solid #3949ab;
+      padding-bottom: 5px;
+      margin-bottom: 14px;
+    }
+
+    /* ── Grid rows ───────────────────────────────────────────────────────── */
+    .row {
+      display: flex;
+      gap: 0;
+      border-bottom: 1px solid #e0e4ef;
+    }
+    .row:last-child { border-bottom: none; }
+
+    .cell {
+      padding: 22px 28px;
+      flex: 1;
+    }
+    .cell + .cell { border-left: 1px solid #e0e4ef; }
+
+    .cell-2 { flex: 2; }
+    .cell-3 { flex: 3; }
+
+    /* ── Architecture diagram ────────────────────────────────────────────── */
+    .arch-diagram {
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: .78rem;
+      background: #f5f6fa;
+      border: 1px solid #c5cae9;
+      border-radius: 6px;
+      padding: 14px 16px;
+      line-height: 1.7;
+      color: #1a237e;
+      white-space: pre;
+    }
+    .arch-note {
+      margin-top: 10px;
+      font-size: .82rem;
+      color: #555;
+      font-style: italic;
+    }
+
+    /* ── Features table ──────────────────────────────────────────────────── */
+    .features-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .88rem;
+    }
+    .features-table th {
+      background: #3949ab;
+      color: #fff;
+      padding: 8px 12px;
+      text-align: left;
+      font-weight: 600;
+      font-size: .82rem;
+      text-transform: uppercase;
+      letter-spacing: .8px;
+    }
+    .features-table td {
+      padding: 8px 12px;
+      border-bottom: 1px solid #e8eaf6;
+      vertical-align: top;
+    }
+    .features-table tr:nth-child(even) td { background: #f5f6fa; }
+    .features-table td:first-child {
+      font-weight: 700;
+      color: #1a237e;
+      white-space: nowrap;
+    }
+    .badge {
+      display: inline-block;
+      background: #e8eaf6;
+      color: #1a237e;
+      border-radius: 3px;
+      padding: 1px 6px;
+      font-size: .75rem;
+      font-weight: 600;
+      margin: 1px 2px;
+    }
+
+    /* ── Screenshots ─────────────────────────────────────────────────────── */
+    .screenshots-row {
+      display: flex;
+      gap: 0;
+      border-bottom: 1px solid #e0e4ef;
+    }
+    .screenshot-cell {
+      flex: 1;
+      padding: 18px 20px;
+      border-right: 1px solid #e0e4ef;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .screenshot-cell:last-child { border-right: none; }
+    .screenshot-cell img {
+      width: 100%;
+      max-width: 340px;
+      border: 2px solid #c5cae9;
+      border-radius: 6px;
+      box-shadow: 0 3px 12px rgba(0,0,0,.12);
+      display: block;
+    }
+    .screenshot-caption {
+      margin-top: 9px;
+      font-size: .78rem;
+      text-align: center;
+      color: #444;
+    }
+    .screenshot-caption strong {
+      display: block;
+      color: #1a237e;
+      font-size: .83rem;
+      margin-bottom: 2px;
+    }
+
+    /* ── Tech table ──────────────────────────────────────────────────────── */
+    .tech-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .86rem;
+    }
+    .tech-table th {
+      background: #1a237e;
+      color: #fff;
+      padding: 7px 10px;
+      text-align: left;
+      font-size: .8rem;
+      text-transform: uppercase;
+      letter-spacing: .7px;
+    }
+    .tech-table td {
+      padding: 7px 10px;
+      border-bottom: 1px solid #e8eaf6;
+      vertical-align: top;
+    }
+    .tech-table tr:nth-child(even) td { background: #f5f6fa; }
+    .tech-table td:first-child { font-weight: 700; color: #3949ab; }
+
+    /* ── Design decisions ────────────────────────────────────────────────── */
+    .decision {
+      margin-bottom: 10px;
+      font-size: .86rem;
+    }
+    .decision .q {
+      font-weight: 700;
+      color: #1a237e;
+    }
+    .decision .a {
+      color: #333;
+      margin-top: 2px;
+    }
+
+    /* ── Demo script ─────────────────────────────────────────────────────── */
+    .demo-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .demo-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: .84rem;
+    }
+    .demo-step .step-num {
+      background: #3949ab;
+      color: #fff;
+      border-radius: 50%;
+      width: 22px;
+      height: 22px;
+      min-width: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .72rem;
+      font-weight: 700;
+    }
+    .demo-step .step-time {
+      color: #888;
+      font-size: .76rem;
+      white-space: nowrap;
+      padding-top: 2px;
+    }
+    .demo-step .step-body { color: #333; }
+    .demo-step .step-body strong { color: #1a237e; }
+
+    /* ── Footer ──────────────────────────────────────────────────────────── */
+    .footer {
+      background: #1a237e;
+      color: rgba(255,255,255,.7);
+      text-align: center;
+      padding: 10px;
+      font-size: .78rem;
+    }
+  </style>
+</head>
+<body>
+<div class="poster">
+
+  <!-- ── HEADER ─────────────────────────────────────────────────────────── -->
+  <div class="header">
+    <div class="header-logo">📚</div>
+    <div class="header-text">
+      <h1>Star Publications</h1>
+      <div class="subtitle">Desktop Publication Management System &nbsp;·&nbsp; C# · WPF · Entity Framework Core · MVVM</div>
+      <div class="objective">
+        A Windows desktop application for managing the classic <em>pubs</em> database — enabling staff to manage sales orders,
+        browse a book catalogue, and search publishers through a clean, modern WPF interface built on the MVVM pattern.
+      </div>
+    </div>
+  </div>
+
+  <!-- ── ROW 1: Objective + Architecture ────────────────────────────────── -->
+  <div class="row">
+
+    <div class="cell">
+      <div class="section-title">Project Objective</div>
+      <p style="font-size:.9rem;margin-bottom:12px;">
+        Build a fully functional multi-subsystem desktop application that demonstrates
+        professional-grade software architecture, database integration, and user-interface design
+        using the Microsoft .NET ecosystem.
+      </p>
+      <p style="font-size:.9rem;"><strong>Three subsystems delivered:</strong></p>
+      <ul style="font-size:.88rem;margin-top:6px;padding-left:18px;line-height:1.8;">
+        <li>🛒 &nbsp;<strong>Sales Order Management</strong> — full CRUD with validation</li>
+        <li>📖 &nbsp;<strong>Book Search</strong> — catalogue browse &amp; detail panel</li>
+        <li>🏢 &nbsp;<strong>Publisher Search</strong> — publisher browse &amp; detail panel</li>
+      </ul>
+    </div>
+
+    <div class="cell cell-2">
+      <div class="section-title">MVVM Architecture</div>
+      <div class="arch-diagram">┌──────────────────────────────────────────────────────────────┐
+│                        Views  (XAML)                         │
+│   MainWindow · SalesOrderView · BookSearchView ·             │
+│   PublisherSearchView  —  zero code-behind                   │
+└──────────────────────────────┬───────────────────────────────┘
+                               │  Data Binding  (INotifyPropertyChanged)
+┌──────────────────────────────▼───────────────────────────────┐
+│                      ViewModels                              │
+│   MainViewModel · SalesOrderViewModel · BookSearchViewModel  │
+│   PublisherSearchViewModel · BaseViewModel (SetProperty)     │
+└──────────────────────────────┬───────────────────────────────┘
+                               │  EF Core Queries / RelayCommand
+┌──────────────────────────────▼───────────────────────────────┐
+│            Data Layer  (EF Core + DbContext)                  │
+│        PubsDbContext · DbContextFactory · appsettings.json   │
+└──────────────────────────────┬───────────────────────────────┘
+                               │
+┌──────────────────────────────▼───────────────────────────────┐
+│         SQL Server / LocalDB   (pubs schema)                 │
+│    publishers · titles · authors · stores · sales            │
+└──────────────────────────────────────────────────────────────┘</div>
+      <p class="arch-note">
+        Workflow: User interacts with View → ViewModel executes <code>RelayCommand</code> → EF Core queries SQL Server → result bound back to View.
+      </p>
+    </div>
+
+  </div>
+
+  <!-- ── ROW 2: Key Features ────────────────────────────────────────────── -->
+  <div class="row">
+    <div class="cell">
+      <div class="section-title">Key Features &amp; Functionalities</div>
+      <table class="features-table">
+        <thead>
+          <tr><th>Module</th><th>Features</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>🛒 Sales Orders</td>
+            <td>
+              <span class="badge">View &amp; Sort</span>
+              <span class="badge">Search by Order # / Store ID</span>
+              <span class="badge">Add</span>
+              <span class="badge">Edit</span>
+              <span class="badge">Delete</span>
+              <span class="badge">Inline slide-in form</span>
+              <span class="badge">Composite-key duplicate detection</span>
+              <span class="badge">Field validation</span>
+            </td>
+          </tr>
+          <tr>
+            <td>📖 Book Search</td>
+            <td>
+              <span class="badge">Full catalogue on load</span>
+              <span class="badge">Search by Title / Genre / Publisher / Author</span>
+              <span class="badge">Partial-match filtering</span>
+              <span class="badge">Detail panel: authors &amp; store sales</span>
+            </td>
+          </tr>
+          <tr>
+            <td>🏢 Publisher Search</td>
+            <td>
+              <span class="badge">Full list on load</span>
+              <span class="badge">Search by Name / City / State / Country</span>
+              <span class="badge">Detail panel: published titles &amp; PR info</span>
+            </td>
+          </tr>
+          <tr>
+            <td>⚙️ General UX</td>
+            <td>
+              <span class="badge">Persistent status bar</span>
+              <span class="badge">Busy / loading indicator</span>
+              <span class="badge">Inline validation errors</span>
+              <span class="badge">Single-window navigation</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── ROW 3: Screenshots ─────────────────────────────────────────────── -->
+  <div class="screenshots-row">
+
+    <div class="screenshot-cell">
+      <img src="assets/screenshots/sales_orders.png"
+           alt="Sales Orders — opening screen" />
+      <div class="screenshot-caption">
+        <strong>① Sales Order Management</strong>
+        Opening screen after DB setup — all orders loaded, sortable grid with store name and book title linked via navigation properties.
+      </div>
+    </div>
+
+    <div class="screenshot-cell">
+      <img src="assets/screenshots/order_added.png"
+           alt="New order added and selected" />
+      <div class="screenshot-caption">
+        <strong>② Order Added &amp; Selected</strong>
+        New order row highlighted after successful save — inline form performs field validation and composite-key duplicate detection before writing to SQL Server.
+      </div>
+    </div>
+
+    <div class="screenshot-cell">
+      <img src="assets/screenshots/book_search.png"
+           alt="Book Search and Display" />
+      <div class="screenshot-caption">
+        <strong>③ Book Search &amp; Display</strong>
+        Full catalogue loaded on startup; search by title, type, publisher, or author. Select any row to reveal the Book Details panel.
+      </div>
+    </div>
+
+    <div class="screenshot-cell">
+      <img src="assets/screenshots/publishers.png"
+           alt="Publisher Search and Display" />
+      <div class="screenshot-caption">
+        <strong>④ Publisher Search &amp; Display</strong>
+        All publishers listed; search by name, city, state, or country. Selecting a row populates the Publisher Details panel with titles and PR information.
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── ROW 4: Tech Stack + Design Decisions + Demo Script ────────────── -->
+  <div class="row">
+
+    <div class="cell">
+      <div class="section-title">Technology Stack</div>
+      <table class="tech-table">
+        <thead><tr><th>Technology</th><th>Role</th></tr></thead>
+        <tbody>
+          <tr><td>C# 12 / .NET 8</td><td>Core language &amp; runtime</td></tr>
+          <tr><td>WPF (XAML)</td><td>Desktop UI framework — data templates, styles, value converters</td></tr>
+          <tr><td>Entity Framework Core 8</td><td>ORM for SQL Server — Fluent API, navigation properties, LINQ queries</td></tr>
+          <tr><td>MVVM Pattern</td><td>Strict separation of UI and business logic; zero code-behind</td></tr>
+          <tr><td>RelayCommand</td><td>Generic ICommand — binds any method to XAML buttons</td></tr>
+          <tr><td>Microsoft.Extensions.Configuration</td><td>appsettings.json connection-string loading</td></tr>
+          <tr><td>SQL Server / LocalDB</td><td>Relational DB — classic pubs schema (setup_pubs.sql)</td></tr>
+          <tr><td>Visual Studio 2022</td><td>IDE — .slnx solution format</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="cell">
+      <div class="section-title">Design Decisions</div>
+
+      <div class="decision">
+        <div class="q">Why MVVM?</div>
+        <div class="a">Views are purely XAML with zero code-behind — any ViewModel can be tested independently of the UI, and swapping a View requires no logic changes.</div>
+      </div>
+      <div class="decision">
+        <div class="q">Why a per-operation DbContext factory?</div>
+        <div class="a">Avoids long-lived contexts; each DB call creates a fresh <code>PubsDbContext</code> to prevent stale-entity tracking and connection-pool exhaustion.</div>
+      </div>
+      <div class="decision">
+        <div class="q">Why composite primary keys on Sales &amp; TitleAuthor?</div>
+        <div class="a">Mirrors the real-world <em>pubs</em> schema constraints, enforced at both the database and application level — duplicate detection runs before any insert.</div>
+      </div>
+      <div class="decision">
+        <div class="q">Why RelayCommand?</div>
+        <div class="a">Eliminates boilerplate <code>ICommand</code> implementations; any method — including <code>canExecute</code> predicates — is wrapped in one line and bound directly in XAML.</div>
+      </div>
+      <div class="decision">
+        <div class="q">Why does MainViewModel own child ViewModels?</div>
+        <div class="a">Provides centralized status-bar aggregation and single-window navigation without frames, pages, or navigation service overhead.</div>
+      </div>
+    </div>
+
+    <div class="cell">
+      <div class="section-title">10 – 15 Minute Demo Script</div>
+      <div class="demo-steps">
+        <div class="demo-step">
+          <div class="step-num">1</div>
+          <div class="step-time">2 min</div>
+          <div class="step-body"><strong>Introduction</strong> — project title, objective, and MVVM architecture diagram on the poster.</div>
+        </div>
+        <div class="demo-step">
+          <div class="step-num">2</div>
+          <div class="step-time">3 min</div>
+          <div class="step-body"><strong>Sales Orders demo</strong> — load all orders → search by order number → add a new order → edit the date/qty → delete with confirmation.</div>
+        </div>
+        <div class="demo-step">
+          <div class="step-num">3</div>
+          <div class="step-time">3 min</div>
+          <div class="step-body"><strong>Book Search demo</strong> — search by author name → select a book → show the detail panel (authors &amp; store availability).</div>
+        </div>
+        <div class="demo-step">
+          <div class="step-num">4</div>
+          <div class="step-time">2 min</div>
+          <div class="step-body"><strong>Publisher Search demo</strong> — search by city → select a publisher → detail panel shows titles with prices and PR description.</div>
+        </div>
+        <div class="demo-step">
+          <div class="step-num">5</div>
+          <div class="step-time">2 min</div>
+          <div class="step-body"><strong>Code walk-through</strong> — show <code>SalesOrderViewModel.cs</code>: backing fields, <code>RelayCommand</code> wiring, <code>TryExecute</code> wrapper, and <code>DbContextFactory</code>.</div>
+        </div>
+        <div class="demo-step">
+          <div class="step-num">6</div>
+          <div class="step-time">2–3 min</div>
+          <div class="step-body"><strong>Q&amp;A</strong> — design decisions: MVVM rationale, composite keys, per-operation DbContext, single-window navigation.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── FOOTER ─────────────────────────────────────────────────────────── -->
+  <div class="footer">
+    Star Publications &nbsp;·&nbsp; C# Final Project &nbsp;·&nbsp; Built with C# 12 · .NET 8 · WPF · Entity Framework Core 8 · SQL Server
+  </div>
+
+</div>
+</body>
+</html>
