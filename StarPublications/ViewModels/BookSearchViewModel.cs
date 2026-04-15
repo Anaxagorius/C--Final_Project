@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using StarPublications.Commands;
 using StarPublications.Data;
 using StarPublications.Models;
+using StarPublications.Utilities;
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -291,6 +292,7 @@ namespace StarPublications.ViewModels
             }
             catch (Exception ex)
             {
+                ExceptionLogger.Log(nameof(BookSearchViewModel), ex);
                 var message = ex.InnerException?.Message ?? ex.Message;
                 Application.Current.Dispatcher.Invoke(() =>
                     ErrorMessage = $"Error: {message}");

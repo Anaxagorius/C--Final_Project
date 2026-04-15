@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using StarPublications.Commands;
 using StarPublications.Data;
+using StarPublications.Utilities;
 using System;
 using System.Linq;
 using System.Windows;
@@ -100,10 +101,7 @@ namespace StarPublications.ViewModels
 
         private void LoadData()
         {
-            IsLoading = true;
-            ErrorMessage = string.Empty;
-
-            try
+            TryExecute(() =>
             {
                 using var ctx = DbContextFactory.Create();
 
@@ -149,12 +147,28 @@ namespace StarPublications.ViewModels
                 });
 
                 StatusMessageChanged?.Invoke($"Dashboard refreshed — {totalOrders} total orders across {totalBooks} titles.");
+            });
+        }
+
+        // ── Helpers ───────────────────────────────────────────────────────────────
+
+        /// <summary>Wraps a synchronous DB call with loading state and error handling.</summary>
+        private void TryExecute(Action action)
+        {
+            IsLoading    = true;
+            ErrorMessage = string.Empty;
+
+            try
+            {
+                action();
             }
             catch (Exception ex)
             {
+                ExceptionLogger.Log(nameof(DashboardViewModel), ex);
                 var message = ex.InnerException?.Message ?? ex.Message;
                 Application.Current.Dispatcher.Invoke(() =>
                     ErrorMessage = $"Could not load dashboard data: {message}");
+                StatusMessageChanged?.Invoke($"Operation failed: {message}");
             }
             finally
             {
