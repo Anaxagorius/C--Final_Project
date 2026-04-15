@@ -7,18 +7,21 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Threading;
 
 namespace StarPublications.ViewModels
 {
     /// <summary>
     /// ViewModel for the Book Search and Display view.
-    /// Allows searching for book titles by title, type, publisher, and author.
+    /// Supports live debounced search, detail panel, and CSV export.
     /// </summary>
     public class BookSearchViewModel : BaseViewModel
     {
         // ── Events / Delegates ────────────────────────────────────────────────────
-        /// <summary>Raised when the status message should be updated.</summary>
         public event Action<string>? StatusMessageChanged;
+
+        // ── Live-search debounce timer ────────────────────────────────────────────
+        private readonly DispatcherTimer _searchTimer;
 
         // ── Backing fields ────────────────────────────────────────────────────────
         private ObservableCollection<Title> _titles = new();
@@ -29,20 +32,19 @@ namespace StarPublications.ViewModels
         private string _searchAuthor = string.Empty;
         private bool _isLoading;
         private string _errorMessage = string.Empty;
+        private string _resultCount = string.Empty;
 
         // Detail panel
         private string _detailAuthors = string.Empty;
         private string _detailStores = string.Empty;
 
         // ── Properties ────────────────────────────────────────────────────────────
-        /// <summary>Titles that match the current search criteria.</summary>
         public ObservableCollection<Title> Titles
         {
             get => _titles;
             set => SetProperty(ref _titles, value);
         }
 
-        /// <summary>Currently selected title (shows detail panel).</summary>
         public Title? SelectedTitle
         {
             get => _selectedTitle;
@@ -56,25 +58,25 @@ namespace StarPublications.ViewModels
         public string SearchTitle
         {
             get => _searchTitle;
-            set => SetProperty(ref _searchTitle, value);
+            set { if (SetProperty(ref _searchTitle, value)) RestartSearchTimer(); }
         }
 
         public string SearchType
         {
             get => _searchType;
-            set => SetProperty(ref _searchType, value);
+            set { if (SetProperty(ref _searchType, value)) RestartSearchTimer(); }
         }
 
         public string SearchPublisher
         {
             get => _searchPublisher;
-            set => SetProperty(ref _searchPublisher, value);
+            set { if (SetProperty(ref _searchPublisher, value)) RestartSearchTimer(); }
         }
 
         public string SearchAuthor
         {
             get => _searchAuthor;
-            set => SetProperty(ref _searchAuthor, value);
+            set { if (SetProperty(ref _searchAuthor, value)) RestartSearchTimer(); }
         }
 
         public bool IsLoading
@@ -89,14 +91,18 @@ namespace StarPublications.ViewModels
             set => SetProperty(ref _errorMessage, value);
         }
 
-        /// <summary>Comma-separated list of authors for the selected title.</summary>
+        public string ResultCount
+        {
+            get => _resultCount;
+            set => SetProperty(ref _resultCount, value);
+        }
+
         public string DetailAuthors
         {
             get => _detailAuthors;
             set => SetProperty(ref _detailAuthors, value);
         }
 
-        /// <summary>Store availability details for the selected title.</summary>
         public string DetailStores
         {
             get => _detailStores;
@@ -107,13 +113,18 @@ namespace StarPublications.ViewModels
         public ICommand SearchCommand { get; }
         public ICommand ClearCommand { get; }
         public ICommand LoadAllCommand { get; }
+        public ICommand ExportCommand { get; }
 
         // ── Constructor ───────────────────────────────────────────────────────────
         public BookSearchViewModel()
         {
-            SearchCommand = new RelayCommand(_ => Search());
-            ClearCommand = new RelayCommand(_ => Clear());
+            _searchTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(400) };
+            _searchTimer.Tick += (_, _) => { _searchTimer.Stop(); Search(); };
+
+            SearchCommand  = new RelayCommand(_ => Search());
+            ClearCommand   = new RelayCommand(_ => Clear());
             LoadAllCommand = new RelayCommand(_ => LoadAll());
+            ExportCommand  = new RelayCommand(_ => ExportCsv(), _ => Titles.Count > 0);
 
             LoadAll();
         }
@@ -132,7 +143,10 @@ namespace StarPublications.ViewModels
                     .ToList();
 
                 Application.Current.Dispatcher.Invoke(() =>
-                    Titles = new ObservableCollection<Title>(titles));
+                {
+                    Titles = new ObservableCollection<Title>(titles);
+                    ResultCount = $"📊  {titles.Count} books";
+                });
 
                 StatusMessageChanged?.Invoke($"Loaded {titles.Count} book titles.");
             });
@@ -140,6 +154,16 @@ namespace StarPublications.ViewModels
 
         private void Search()
         {
+            // If all filters are empty, just load all
+            if (string.IsNullOrWhiteSpace(SearchTitle) &&
+                string.IsNullOrWhiteSpace(SearchType) &&
+                string.IsNullOrWhiteSpace(SearchPublisher) &&
+                string.IsNullOrWhiteSpace(SearchAuthor))
+            {
+                LoadAll();
+                return;
+            }
+
             TryExecute(() =>
             {
                 using var ctx = DbContextFactory.Create();
@@ -170,7 +194,10 @@ namespace StarPublications.ViewModels
                 var results = query.OrderBy(t => t.TitleName).ToList();
 
                 Application.Current.Dispatcher.Invoke(() =>
-                    Titles = new ObservableCollection<Title>(results));
+                {
+                    Titles = new ObservableCollection<Title>(results);
+                    ResultCount = $"📊  {results.Count} of {ctx.Titles.Count()} books";
+                });
 
                 StatusMessageChanged?.Invoke($"Found {results.Count} matching titles.");
             });
@@ -178,13 +205,14 @@ namespace StarPublications.ViewModels
 
         private void Clear()
         {
-            SearchTitle = string.Empty;
-            SearchType = string.Empty;
+            _searchTimer.Stop();
+            SearchTitle     = string.Empty;
+            SearchType      = string.Empty;
             SearchPublisher = string.Empty;
-            SearchAuthor = string.Empty;
-            DetailAuthors = string.Empty;
-            DetailStores = string.Empty;
-            SelectedTitle = null;
+            SearchAuthor    = string.Empty;
+            DetailAuthors   = string.Empty;
+            DetailStores    = string.Empty;
+            SelectedTitle   = null;
             LoadAll();
         }
 
@@ -194,7 +222,6 @@ namespace StarPublications.ViewModels
             {
                 using var ctx = DbContextFactory.Create();
 
-                // Authors
                 var authors = ctx.TitleAuthors
                     .Include(ta => ta.Author)
                     .Where(ta => ta.TitleId == title.TitleId)
@@ -202,7 +229,6 @@ namespace StarPublications.ViewModels
                     .Select(ta => ta.Author != null ? $"{ta.Author.AuFname} {ta.Author.AuLname}" : "Unknown")
                     .ToList();
 
-                // Stores that have sold this title
                 var stores = ctx.Sales
                     .Include(s => s.Store)
                     .Where(s => s.TitleId == title.TitleId)
@@ -225,9 +251,38 @@ namespace StarPublications.ViewModels
             });
         }
 
+        private void ExportCsv()
+        {
+            var saved = CsvExporter.Export(
+                Titles,
+                ["Title ID", "Title", "Type", "Publisher", "Price", "YTD Sales", "Pub Date"],
+                t =>
+                [
+                    t.TitleId,
+                    t.TitleName,
+                    t.Type ?? string.Empty,
+                    t.Publisher?.PubName ?? string.Empty,
+                    t.Price.HasValue ? t.Price.Value.ToString("F2") : string.Empty,
+                    t.YtdSales?.ToString() ?? string.Empty,
+                    t.PubDate.ToString("yyyy-MM-dd")
+                ],
+                "books");
+
+            if (saved)
+                StatusMessageChanged?.Invoke($"✅  Exported {Titles.Count} books to CSV.");
+        }
+
+        // ── Helpers ───────────────────────────────────────────────────────────────
+
+        private void RestartSearchTimer()
+        {
+            _searchTimer.Stop();
+            _searchTimer.Start();
+        }
+
         private void TryExecute(Action action)
         {
-            IsLoading = true;
+            IsLoading    = true;
             ErrorMessage = string.Empty;
 
             try

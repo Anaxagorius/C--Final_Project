@@ -4,8 +4,8 @@
         xmlns:vm="clr-namespace:StarPublications.ViewModels"
         xmlns:views="clr-namespace:StarPublications.Views"
         Title="Star Publications — Sales Order Management"
-        Height="720" Width="1100"
-        MinHeight="600" MinWidth="900"
+        Height="740" Width="1160"
+        MinHeight="620" MinWidth="940"
         WindowStartupLocation="CenterScreen"
         Background="{StaticResource BackgroundBrush}">
 
@@ -15,6 +15,9 @@
 
     <!-- DataTemplates map ViewModels to their Views -->
     <Window.Resources>
+        <DataTemplate DataType="{x:Type vm:DashboardViewModel}">
+            <views:DashboardView/>
+        </DataTemplate>
         <DataTemplate DataType="{x:Type vm:SalesOrderViewModel}">
             <views:SalesOrderView/>
         </DataTemplate>
@@ -34,50 +37,127 @@
             <RowDefinition Height="Auto"/>  <!-- Status bar -->
         </Grid.RowDefinitions>
 
-        <!-- ── Header ────────────────────────────────────────────────────── -->
-        <Border Grid.Row="0" Background="{StaticResource PrimaryBrush}">
-            <StackPanel Orientation="Horizontal" Margin="20,12">
-                <TextBlock Text="📚" FontSize="26" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                <StackPanel>
-                    <TextBlock Text="Star Publications"
-                               FontSize="22" FontWeight="Bold"
-                               Foreground="White"/>
-                    <TextBlock Text="Sales Order Management Subsystem"
-                               FontSize="11"
-                               Foreground="#B0BEC5"/>
+        <!-- ── Header (gradient) ─────────────────────────────────────────── -->
+        <Border Grid.Row="0">
+            <Border.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                    <GradientStop Color="#1E1B4B" Offset="0"/>
+                    <GradientStop Color="#4338CA" Offset="1"/>
+                </LinearGradientBrush>
+            </Border.Background>
+            <Grid Margin="20,14">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="📚" FontSize="28" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                    <StackPanel>
+                        <TextBlock Text="Star Publications"
+                                   FontSize="22" FontWeight="Bold"
+                                   Foreground="White"/>
+                        <TextBlock Text="Sales Order Management Subsystem"
+                                   FontSize="11"
+                                   Foreground="#C7D2FE"/>
+                    </StackPanel>
                 </StackPanel>
-            </StackPanel>
+                <TextBlock Text="{Binding CurrentTime}"
+                           HorizontalAlignment="Right" VerticalAlignment="Center"
+                           FontSize="13" Foreground="#C7D2FE" FontFamily="Consolas"/>
+            </Grid>
         </Border>
 
         <!-- ── Navigation bar ────────────────────────────────────────────── -->
-        <Border Grid.Row="1" Background="{StaticResource PrimaryLightBrush}">
+        <Border Grid.Row="1">
+            <Border.Background>
+                <SolidColorBrush Color="#1E1B4B"/>
+            </Border.Background>
             <StackPanel Orientation="Horizontal">
+
+                <!-- Dashboard -->
+                <Button Content="🏠  Dashboard"
+                        Command="{Binding ShowDashboardCommand}"
+                        ToolTip="Home — at-a-glance statistics">
+                    <Button.Style>
+                        <Style TargetType="Button" BasedOn="{StaticResource NavButtonStyle}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsDashboardActive}" Value="True">
+                                    <Setter Property="Foreground" Value="White"/>
+                                    <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                </Button>
+
+                <!-- Sales Orders -->
                 <Button Content="🛒  Sales Orders"
-                        Style="{StaticResource NavButtonStyle}"
-                        Command="{Binding ShowSalesOrdersCommand}"/>
+                        Command="{Binding ShowSalesOrdersCommand}"
+                        ToolTip="Add, edit and delete sales orders">
+                    <Button.Style>
+                        <Style TargetType="Button" BasedOn="{StaticResource NavButtonStyle}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsSalesOrdersActive}" Value="True">
+                                    <Setter Property="Foreground" Value="White"/>
+                                    <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                </Button>
+
+                <!-- Books -->
                 <Button Content="📖  Books"
-                        Style="{StaticResource NavButtonStyle}"
-                        Command="{Binding ShowBooksCommand}"/>
+                        Command="{Binding ShowBooksCommand}"
+                        ToolTip="Browse and search book titles">
+                    <Button.Style>
+                        <Style TargetType="Button" BasedOn="{StaticResource NavButtonStyle}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsBooksActive}" Value="True">
+                                    <Setter Property="Foreground" Value="White"/>
+                                    <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                </Button>
+
+                <!-- Publishers -->
                 <Button Content="🏢  Publishers"
-                        Style="{StaticResource NavButtonStyle}"
-                        Command="{Binding ShowPublishersCommand}"/>
+                        Command="{Binding ShowPublishersCommand}"
+                        ToolTip="Browse and search publishers">
+                    <Button.Style>
+                        <Style TargetType="Button" BasedOn="{StaticResource NavButtonStyle}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsPublishersActive}" Value="True">
+                                    <Setter Property="Foreground" Value="White"/>
+                                    <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                </Button>
+
             </StackPanel>
         </Border>
 
         <!-- ── Content area (ContentControl swaps child views) ───────────── -->
         <ContentControl Grid.Row="2"
                         Content="{Binding CurrentView}"
-                        Margin="12"/>
+                        Margin="14"/>
 
         <!-- ── Status bar ────────────────────────────────────────────────── -->
         <Border Grid.Row="3"
-                Background="#EEEEEE"
+                Background="#F1F5F9"
                 BorderBrush="{StaticResource BorderBrush}"
                 BorderThickness="0,1,0,0">
-            <TextBlock Text="{Binding StatusMessage}"
-                       FontSize="12"
-                       Foreground="{StaticResource TextSecondaryBrush}"
-                       Margin="12,5"/>
+            <Grid Margin="14,5">
+                <TextBlock Text="{Binding StatusMessage}"
+                           FontSize="12"
+                           Foreground="{StaticResource TextSecondaryBrush}"
+                           VerticalAlignment="Center"/>
+                <TextBlock Text="Tip: press F5 to refresh · Ctrl+N to add · Ctrl+S to save · Esc to cancel"
+                           FontSize="11" FontStyle="Italic"
+                           Foreground="#94A3B8"
+                           HorizontalAlignment="Right"
+                           VerticalAlignment="Center"/>
+            </Grid>
         </Border>
     </Grid>
 </Window>
