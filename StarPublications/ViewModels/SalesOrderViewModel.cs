@@ -229,6 +229,13 @@ namespace StarPublications.ViewModels
 
         private void Search()
         {
+            // Validate date range before hitting the DB
+            if (SearchDateFrom.HasValue && SearchDateTo.HasValue && SearchDateFrom.Value > SearchDateTo.Value)
+            {
+                ErrorMessage = "The 'From' date must be on or before the 'To' date.";
+                return;
+            }
+
             TryExecute(() =>
             {
                 using var ctx = DbContextFactory.Create();

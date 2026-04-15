@@ -122,6 +122,7 @@ namespace StarPublications.ViewModels
 
                 var topBooks = ctx.Sales
                     .Include(s => s.Title)
+                    .Where(s => s.Title != null)
                     .GroupBy(s => new { s.TitleId, s.Title!.TitleName })
                     .Select(g => new { g.Key.TitleName, TotalQty = g.Sum(s => (int)s.Qty) })
                     .OrderByDescending(x => x.TotalQty)

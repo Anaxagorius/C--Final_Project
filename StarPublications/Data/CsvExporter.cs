@@ -38,17 +38,29 @@ namespace StarPublications.Data
             if (dialog.ShowDialog() != true)
                 return false;
 
-            using var writer = new StreamWriter(dialog.FileName, false, new UTF8Encoding(encoderShouldEmitUTF8Identifier: true));
-
-            writer.WriteLine(string.Join(",", headers.Select(EscapeField)));
-
-            foreach (var item in items)
+            try
             {
-                var row = rowSelector(item);
-                writer.WriteLine(string.Join(",", row.Select(v => EscapeField(v ?? string.Empty))));
-            }
+                using var writer = new StreamWriter(dialog.FileName, false, new UTF8Encoding(encoderShouldEmitUTF8Identifier: true));
 
-            return true;
+                writer.WriteLine(string.Join(",", headers.Select(EscapeField)));
+
+                foreach (var item in items)
+                {
+                    var row = rowSelector(item);
+                    writer.WriteLine(string.Join(",", row.Select(v => EscapeField(v ?? string.Empty))));
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show(
+                    $"Could not write the CSV file:\n{ex.Message}",
+                    "Export Failed",
+                    System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Warning);
+                return false;
+            }
         }
 
         private static string EscapeField(string value)
