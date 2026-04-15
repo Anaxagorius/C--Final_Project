@@ -3,6 +3,13 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:StarPublications.ViewModels">
 
+    <UserControl.InputBindings>
+        <KeyBinding Key="F5"     Command="{Binding LoadDataCommand}"/>
+        <KeyBinding Key="N"      Modifiers="Ctrl" Command="{Binding AddNewCommand}"/>
+        <KeyBinding Key="S"      Modifiers="Ctrl" Command="{Binding SaveCommand}"/>
+        <KeyBinding Key="Escape" Command="{Binding CancelEditCommand}"/>
+    </UserControl.InputBindings>
+
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -18,26 +25,42 @@
 
         <!-- Search/Filter panel -->
         <Border Grid.Row="1" Style="{StaticResource CardPanelStyle}" Margin="0,0,0,10">
-            <StackPanel Orientation="Horizontal">
-                <TextBlock Text="Order #:" Style="{StaticResource LabelStyle}" Margin="0,0,8,0"/>
-                <TextBox Width="160"
+            <WrapPanel Orientation="Horizontal">
+                <TextBlock Text="Order #:" Style="{StaticResource LabelStyle}" Margin="0,0,6,0"/>
+                <TextBox Width="140"
                          Text="{Binding SearchOrderNumber, UpdateSourceTrigger=PropertyChanged}"
                          Style="{StaticResource ModernTextBoxStyle}"
-                         Margin="0,0,16,0"/>
+                         ToolTip="Filter by order number"
+                         Margin="0,0,14,0"/>
 
-                <TextBlock Text="Store ID:" Style="{StaticResource LabelStyle}" Margin="0,0,8,0"/>
-                <TextBox Width="100"
+                <TextBlock Text="Store ID:" Style="{StaticResource LabelStyle}" Margin="0,0,6,0"/>
+                <TextBox Width="90"
                          Text="{Binding SearchStoreId, UpdateSourceTrigger=PropertyChanged}"
                          Style="{StaticResource ModernTextBoxStyle}"
-                         Margin="0,0,16,0"/>
+                         ToolTip="Filter by store ID"
+                         Margin="0,0,14,0"/>
+
+                <TextBlock Text="From:" Style="{StaticResource LabelStyle}" Margin="0,0,6,0"/>
+                <DatePicker SelectedDate="{Binding SearchDateFrom}"
+                            Width="120" FontSize="13"
+                            ToolTip="Earliest order date"
+                            Margin="0,0,14,0"/>
+
+                <TextBlock Text="To:" Style="{StaticResource LabelStyle}" Margin="0,0,6,0"/>
+                <DatePicker SelectedDate="{Binding SearchDateTo}"
+                            Width="120" FontSize="13"
+                            ToolTip="Latest order date"
+                            Margin="0,0,14,0"/>
 
                 <Button Content="🔍 Search"
                         Style="{StaticResource PrimaryButtonStyle}"
+                        ToolTip="Search (Enter)"
                         Command="{Binding SearchCommand}"/>
                 <Button Content="✖ Clear"
                         Style="{StaticResource SecondaryButtonStyle}"
+                        ToolTip="Clear all filters"
                         Command="{Binding ClearSearchCommand}"/>
-            </StackPanel>
+            </WrapPanel>
         </Border>
 
         <!-- Main content area -->
@@ -57,16 +80,26 @@
                 <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8">
                     <Button Content="＋ Add New"
                             Style="{StaticResource AccentButtonStyle}"
+                            ToolTip="Add a new sales order (Ctrl+N)"
                             Command="{Binding AddNewCommand}"/>
                     <Button Content="✏ Edit"
                             Style="{StaticResource PrimaryButtonStyle}"
+                            ToolTip="Edit selected order"
                             Command="{Binding EditCommand}"/>
                     <Button Content="🗑 Delete"
                             Style="{StaticResource DangerButtonStyle}"
+                            ToolTip="Delete selected order"
                             Command="{Binding DeleteCommand}"/>
                     <Button Content="🔄 Refresh"
                             Style="{StaticResource SecondaryButtonStyle}"
+                            ToolTip="Reload all orders (F5)"
                             Command="{Binding LoadDataCommand}"/>
+                    <Button Content="📥 Export CSV"
+                            Style="{StaticResource GhostButtonStyle}"
+                            ToolTip="Export visible records to a CSV file"
+                            Command="{Binding ExportCommand}"/>
+                    <TextBlock Text="{Binding ResultCount}"
+                               Style="{StaticResource RecordCountStyle}"/>
                     <TextBlock Text="  Loading…"
                                Style="{StaticResource LoadingTextStyle}"
                                Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}"
@@ -117,7 +150,8 @@
                         <TextBlock Text="Order Number *" Style="{StaticResource LabelStyle}"/>
                         <TextBox Margin="0,4,0,10"
                                  Style="{StaticResource ModernTextBoxStyle}"
-                                 Text="{Binding EditOrdNum, UpdateSourceTrigger=PropertyChanged}"/>
+                                 Text="{Binding EditOrdNum, UpdateSourceTrigger=PropertyChanged}"
+                                 ToolTip="Maximum 20 characters"/>
 
                         <TextBlock Text="Order Date *" Style="{StaticResource LabelStyle}"/>
                         <DatePicker Margin="0,4,0,10"
@@ -130,9 +164,12 @@
                                  Text="{Binding EditQty, UpdateSourceTrigger=PropertyChanged}"/>
 
                         <TextBlock Text="Payment Terms *" Style="{StaticResource LabelStyle}"/>
-                        <TextBox Margin="0,4,0,10"
-                                 Style="{StaticResource ModernTextBoxStyle}"
-                                 Text="{Binding EditPayTerms, UpdateSourceTrigger=PropertyChanged}"/>
+                        <ComboBox Margin="0,4,0,10"
+                                  Style="{StaticResource ModernComboBoxStyle}"
+                                  IsEditable="True"
+                                  ItemsSource="{Binding PayTermOptions}"
+                                  Text="{Binding EditPayTerms, UpdateSourceTrigger=PropertyChanged}"
+                                  ToolTip="Select a common term or type a custom value"/>
 
                         <TextBlock Text="Book Title *" Style="{StaticResource LabelStyle}"/>
                         <ComboBox Margin="0,4,0,16"
@@ -150,9 +187,11 @@
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                             <Button Content="💾 Save"
                                     Style="{StaticResource PrimaryButtonStyle}"
+                                    ToolTip="Save changes (Ctrl+S)"
                                     Command="{Binding SaveCommand}"/>
                             <Button Content="✖ Cancel"
                                     Style="{StaticResource SecondaryButtonStyle}"
+                                    ToolTip="Discard changes (Esc)"
                                     Command="{Binding CancelEditCommand}"/>
                         </StackPanel>
                     </StackPanel>

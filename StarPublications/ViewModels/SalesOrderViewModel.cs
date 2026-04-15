@@ -12,7 +12,7 @@ namespace StarPublications.ViewModels
 {
     /// <summary>
     /// ViewModel for the Sales Order Management view.
-    /// Supports Add, Edit, Delete, and Search of sales orders.
+    /// Supports Add, Edit, Delete, Search (with date range), and CSV Export of sales orders.
     /// </summary>
     public class SalesOrderViewModel : BaseViewModel
     {
@@ -27,9 +27,12 @@ namespace StarPublications.ViewModels
         private Sale? _selectedSale;
         private string _searchOrderNumber = string.Empty;
         private string _searchStoreId = string.Empty;
+        private DateTime? _searchDateFrom;
+        private DateTime? _searchDateTo;
         private bool _isEditing;
         private bool _isLoading;
         private string _errorMessage = string.Empty;
+        private string _resultCount = string.Empty;
 
         // Edit form fields
         private string _editStorId = string.Empty;
@@ -40,28 +43,24 @@ namespace StarPublications.ViewModels
         private string _editTitleId = string.Empty;
 
         // ── Properties ────────────────────────────────────────────────────────────
-        /// <summary>All (filtered) sales orders displayed in the grid.</summary>
         public ObservableCollection<Sale> SalesOrders
         {
             get => _salesOrders;
             set => SetProperty(ref _salesOrders, value);
         }
 
-        /// <summary>All stores for the combo-box picker.</summary>
         public ObservableCollection<Store> Stores
         {
             get => _stores;
             set => SetProperty(ref _stores, value);
         }
 
-        /// <summary>All titles for the combo-box picker.</summary>
         public ObservableCollection<Title> Titles
         {
             get => _titles;
             set => SetProperty(ref _titles, value);
         }
 
-        /// <summary>Currently selected sale in the grid.</summary>
         public Sale? SelectedSale
         {
             get => _selectedSale;
@@ -72,39 +71,55 @@ namespace StarPublications.ViewModels
             }
         }
 
-        /// <summary>Filter: order number substring.</summary>
         public string SearchOrderNumber
         {
             get => _searchOrderNumber;
             set => SetProperty(ref _searchOrderNumber, value);
         }
 
-        /// <summary>Filter: store ID substring.</summary>
         public string SearchStoreId
         {
             get => _searchStoreId;
             set => SetProperty(ref _searchStoreId, value);
         }
 
-        /// <summary>Whether the edit form panel is visible.</summary>
+        /// <summary>Filter: earliest order date (inclusive).</summary>
+        public DateTime? SearchDateFrom
+        {
+            get => _searchDateFrom;
+            set => SetProperty(ref _searchDateFrom, value);
+        }
+
+        /// <summary>Filter: latest order date (inclusive).</summary>
+        public DateTime? SearchDateTo
+        {
+            get => _searchDateTo;
+            set => SetProperty(ref _searchDateTo, value);
+        }
+
         public bool IsEditing
         {
             get => _isEditing;
             set => SetProperty(ref _isEditing, value);
         }
 
-        /// <summary>Whether a database operation is in progress.</summary>
         public bool IsLoading
         {
             get => _isLoading;
             set => SetProperty(ref _isLoading, value);
         }
 
-        /// <summary>Validation / error message shown to the user.</summary>
         public string ErrorMessage
         {
             get => _errorMessage;
             set => SetProperty(ref _errorMessage, value);
+        }
+
+        /// <summary>Friendly record-count string shown in the toolbar.</summary>
+        public string ResultCount
+        {
+            get => _resultCount;
+            set => SetProperty(ref _resultCount, value);
         }
 
         // Edit form properties
@@ -144,6 +159,19 @@ namespace StarPublications.ViewModels
             set => SetProperty(ref _editTitleId, value);
         }
 
+        /// <summary>Common payment term options shown in the dropdown.</summary>
+        public string[] PayTermOptions { get; } =
+        [
+            "Net 30",
+            "Net 60",
+            "Net 90",
+            "ON Invoice",
+            "COD",
+            "30 Days",
+            "60 Days",
+            "Due on Receipt"
+        ];
+
         // ── Commands ──────────────────────────────────────────────────────────────
         public ICommand LoadDataCommand { get; }
         public ICommand SearchCommand { get; }
@@ -153,18 +181,20 @@ namespace StarPublications.ViewModels
         public ICommand DeleteCommand { get; }
         public ICommand CancelEditCommand { get; }
         public ICommand ClearSearchCommand { get; }
+        public ICommand ExportCommand { get; }
 
         // ── Constructor ───────────────────────────────────────────────────────────
         public SalesOrderViewModel()
         {
-            LoadDataCommand = new RelayCommand(_ => LoadData());
-            SearchCommand = new RelayCommand(_ => Search());
-            AddNewCommand = new RelayCommand(_ => AddNew());
-            EditCommand = new RelayCommand(_ => BeginEdit(), _ => SelectedSale != null);
-            SaveCommand = new RelayCommand(_ => Save(), _ => IsEditing);
-            DeleteCommand = new RelayCommand(_ => DeleteSelected(), _ => SelectedSale != null && !IsEditing);
+            LoadDataCommand   = new RelayCommand(_ => LoadData());
+            SearchCommand     = new RelayCommand(_ => Search());
+            AddNewCommand     = new RelayCommand(_ => AddNew());
+            EditCommand       = new RelayCommand(_ => BeginEdit(), _ => SelectedSale != null);
+            SaveCommand       = new RelayCommand(_ => Save(), _ => IsEditing);
+            DeleteCommand     = new RelayCommand(_ => DeleteSelected(), _ => SelectedSale != null && !IsEditing);
             CancelEditCommand = new RelayCommand(_ => CancelEdit(), _ => IsEditing);
             ClearSearchCommand = new RelayCommand(_ => ClearSearch());
+            ExportCommand     = new RelayCommand(_ => ExportCsv(), _ => SalesOrders.Count > 0);
 
             LoadData();
         }
@@ -190,6 +220,7 @@ namespace StarPublications.ViewModels
                     Stores = new ObservableCollection<Store>(stores);
                     Titles = new ObservableCollection<Title>(titles);
                     SalesOrders = new ObservableCollection<Sale>(sales);
+                    ResultCount = $"📊  {sales.Count} orders";
                 });
 
                 StatusMessageChanged?.Invoke($"Loaded {sales.Count} sales orders.");
@@ -213,10 +244,19 @@ namespace StarPublications.ViewModels
                 if (!string.IsNullOrWhiteSpace(SearchStoreId))
                     query = query.Where(s => s.StorId.Contains(SearchStoreId));
 
+                if (SearchDateFrom.HasValue)
+                    query = query.Where(s => s.OrdDate >= SearchDateFrom.Value);
+
+                if (SearchDateTo.HasValue)
+                    query = query.Where(s => s.OrdDate <= SearchDateTo.Value);
+
                 var results = query.OrderByDescending(s => s.OrdDate).ToList();
 
                 Application.Current.Dispatcher.Invoke(() =>
-                    SalesOrders = new ObservableCollection<Sale>(results));
+                {
+                    SalesOrders = new ObservableCollection<Sale>(results);
+                    ResultCount = $"📊  {results.Count} of {ctx.Sales.Count()} orders";
+                });
 
                 StatusMessageChanged?.Invoke($"Found {results.Count} matching sales orders.");
             });
@@ -226,27 +266,29 @@ namespace StarPublications.ViewModels
         {
             SearchOrderNumber = string.Empty;
             SearchStoreId = string.Empty;
+            SearchDateFrom = null;
+            SearchDateTo = null;
             LoadData();
         }
 
         private void AddNew()
         {
             SelectedSale = null;
-            EditStorId = Stores.FirstOrDefault()?.StorId ?? string.Empty;
-            EditOrdNum = string.Empty;
-            EditOrdDate = DateTime.Today;
-            EditQty = 1;
-            EditPayTerms = "Net 30";
-            EditTitleId = Titles.FirstOrDefault()?.TitleId ?? string.Empty;
-            IsEditing = true;
-            ErrorMessage = string.Empty;
+            EditStorId    = Stores.FirstOrDefault()?.StorId ?? string.Empty;
+            EditOrdNum    = string.Empty;
+            EditOrdDate   = DateTime.Today;
+            EditQty       = 1;
+            EditPayTerms  = "Net 30";
+            EditTitleId   = Titles.FirstOrDefault()?.TitleId ?? string.Empty;
+            IsEditing     = true;
+            ErrorMessage  = string.Empty;
         }
 
         private void BeginEdit()
         {
             if (SelectedSale == null) return;
             PopulateEditForm(SelectedSale);
-            IsEditing = true;
+            IsEditing    = true;
             ErrorMessage = string.Empty;
         }
 
@@ -261,11 +303,10 @@ namespace StarPublications.ViewModels
                 if (SelectedSale == null)
                 {
                     // ── Add new sale ───────────────────────────────────────────
-                    // Check for duplicate composite key
                     bool exists = ctx.Sales.Any(s =>
-                        s.StorId == EditStorId &&
-                        s.OrdNum == EditOrdNum &&
-                        s.TitleId == EditTitleId);
+                        s.StorId   == EditStorId &&
+                        s.OrdNum   == EditOrdNum &&
+                        s.TitleId  == EditTitleId);
 
                     if (exists)
                     {
@@ -276,17 +317,17 @@ namespace StarPublications.ViewModels
 
                     var newSale = new Sale
                     {
-                        StorId = EditStorId.Trim(),
-                        OrdNum = EditOrdNum.Trim(),
-                        OrdDate = EditOrdDate,
-                        Qty = EditQty,
+                        StorId   = EditStorId.Trim(),
+                        OrdNum   = EditOrdNum.Trim(),
+                        OrdDate  = EditOrdDate,
+                        Qty      = EditQty,
                         PayTerms = EditPayTerms.Trim(),
-                        TitleId = EditTitleId.Trim()
+                        TitleId  = EditTitleId.Trim()
                     };
 
                     ctx.Sales.Add(newSale);
                     ctx.SaveChanges();
-                    StatusMessageChanged?.Invoke("Sales order added successfully.");
+                    StatusMessageChanged?.Invoke("✅  Sales order added successfully.");
                 }
                 else
                 {
@@ -294,18 +335,18 @@ namespace StarPublications.ViewModels
                     var existing = ctx.Sales.Find(SelectedSale.StorId, SelectedSale.OrdNum, SelectedSale.TitleId);
                     if (existing != null)
                     {
-                        existing.OrdDate = EditOrdDate;
-                        existing.Qty = EditQty;
+                        existing.OrdDate  = EditOrdDate;
+                        existing.Qty      = EditQty;
                         existing.PayTerms = EditPayTerms.Trim();
                         ctx.SaveChanges();
                     }
 
-                    StatusMessageChanged?.Invoke("Sales order updated successfully.");
+                    StatusMessageChanged?.Invoke("✅  Sales order updated successfully.");
                 }
 
                 Application.Current.Dispatcher.Invoke(() =>
                 {
-                    IsEditing = false;
+                    IsEditing    = false;
                     ErrorMessage = string.Empty;
                 });
 
@@ -318,7 +359,7 @@ namespace StarPublications.ViewModels
             if (SelectedSale == null) return;
 
             var result = MessageBox.Show(
-                $"Delete order '{SelectedSale.OrdNum}' for store '{SelectedSale.StorId}'?",
+                $"Delete order '{SelectedSale.OrdNum}' for store '{SelectedSale.Store?.StorName ?? SelectedSale.StorId}'?\n\nThis action cannot be undone.",
                 "Confirm Delete",
                 MessageBoxButton.YesNo,
                 MessageBoxImage.Warning);
@@ -335,27 +376,49 @@ namespace StarPublications.ViewModels
                     ctx.SaveChanges();
                 }
 
-                StatusMessageChanged?.Invoke("Sales order deleted.");
+                StatusMessageChanged?.Invoke("🗑  Sales order deleted.");
                 LoadData();
             });
         }
 
         private void CancelEdit()
         {
-            IsEditing = false;
+            IsEditing    = false;
             ErrorMessage = string.Empty;
+        }
+
+        private void ExportCsv()
+        {
+            var saved = CsvExporter.Export(
+                SalesOrders,
+                ["Store ID", "Store Name", "Order #", "Order Date", "Qty", "Pay Terms", "Title ID", "Book Title"],
+                s =>
+                [
+                    s.StorId,
+                    s.Store?.StorName ?? string.Empty,
+                    s.OrdNum,
+                    s.OrdDate.ToString("yyyy-MM-dd"),
+                    s.Qty.ToString(),
+                    s.PayTerms,
+                    s.TitleId,
+                    s.Title?.TitleName ?? string.Empty
+                ],
+                "sales_orders");
+
+            if (saved)
+                StatusMessageChanged?.Invoke($"✅  Exported {SalesOrders.Count} records to CSV.");
         }
 
         // ── Helpers ───────────────────────────────────────────────────────────────
 
         private void PopulateEditForm(Sale sale)
         {
-            EditStorId = sale.StorId;
-            EditOrdNum = sale.OrdNum;
-            EditOrdDate = sale.OrdDate;
-            EditQty = sale.Qty;
+            EditStorId   = sale.StorId;
+            EditOrdNum   = sale.OrdNum;
+            EditOrdDate  = sale.OrdDate;
+            EditQty      = sale.Qty;
             EditPayTerms = sale.PayTerms;
-            EditTitleId = sale.TitleId;
+            EditTitleId  = sale.TitleId;
         }
 
         private bool Validate()
@@ -382,12 +445,10 @@ namespace StarPublications.ViewModels
             return true;
         }
 
-        /// <summary>
-        /// Wraps a synchronous DB call with loading state and error handling.
-        /// </summary>
+        /// <summary>Wraps a synchronous DB call with loading state and error handling.</summary>
         private void TryExecute(Action action)
         {
-            IsLoading = true;
+            IsLoading    = true;
             ErrorMessage = string.Empty;
 
             try

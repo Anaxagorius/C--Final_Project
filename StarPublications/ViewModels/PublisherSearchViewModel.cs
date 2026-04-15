@@ -7,18 +7,21 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Threading;
 
 namespace StarPublications.ViewModels
 {
     /// <summary>
     /// ViewModel for the Publisher Search and Display view.
-    /// Allows searching for publishers by name, city, state, or country.
+    /// Supports live debounced search, detail panel, and CSV export.
     /// </summary>
     public class PublisherSearchViewModel : BaseViewModel
     {
         // ── Events / Delegates ────────────────────────────────────────────────────
-        /// <summary>Raised when the status message should be updated.</summary>
         public event Action<string>? StatusMessageChanged;
+
+        // ── Live-search debounce timer ────────────────────────────────────────────
+        private readonly DispatcherTimer _searchTimer;
 
         // ── Backing fields ────────────────────────────────────────────────────────
         private ObservableCollection<Publisher> _publishers = new();
@@ -29,6 +32,7 @@ namespace StarPublications.ViewModels
         private string _searchCountry = string.Empty;
         private bool _isLoading;
         private string _errorMessage = string.Empty;
+        private string _resultCount = string.Empty;
 
         // Detail panel
         private string _detailTitles = string.Empty;
@@ -54,25 +58,25 @@ namespace StarPublications.ViewModels
         public string SearchName
         {
             get => _searchName;
-            set => SetProperty(ref _searchName, value);
+            set { if (SetProperty(ref _searchName, value)) RestartSearchTimer(); }
         }
 
         public string SearchCity
         {
             get => _searchCity;
-            set => SetProperty(ref _searchCity, value);
+            set { if (SetProperty(ref _searchCity, value)) RestartSearchTimer(); }
         }
 
         public string SearchState
         {
             get => _searchState;
-            set => SetProperty(ref _searchState, value);
+            set { if (SetProperty(ref _searchState, value)) RestartSearchTimer(); }
         }
 
         public string SearchCountry
         {
             get => _searchCountry;
-            set => SetProperty(ref _searchCountry, value);
+            set { if (SetProperty(ref _searchCountry, value)) RestartSearchTimer(); }
         }
 
         public bool IsLoading
@@ -87,14 +91,18 @@ namespace StarPublications.ViewModels
             set => SetProperty(ref _errorMessage, value);
         }
 
-        /// <summary>Newline-separated list of titles for the selected publisher.</summary>
+        public string ResultCount
+        {
+            get => _resultCount;
+            set => SetProperty(ref _resultCount, value);
+        }
+
         public string DetailTitles
         {
             get => _detailTitles;
             set => SetProperty(ref _detailTitles, value);
         }
 
-        /// <summary>PR info / description for the selected publisher.</summary>
         public string DetailPrInfo
         {
             get => _detailPrInfo;
@@ -105,13 +113,18 @@ namespace StarPublications.ViewModels
         public ICommand SearchCommand { get; }
         public ICommand ClearCommand { get; }
         public ICommand LoadAllCommand { get; }
+        public ICommand ExportCommand { get; }
 
         // ── Constructor ───────────────────────────────────────────────────────────
         public PublisherSearchViewModel()
         {
-            SearchCommand = new RelayCommand(_ => Search());
-            ClearCommand = new RelayCommand(_ => Clear());
+            _searchTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(400) };
+            _searchTimer.Tick += (_, _) => { _searchTimer.Stop(); Search(); };
+
+            SearchCommand  = new RelayCommand(_ => Search());
+            ClearCommand   = new RelayCommand(_ => Clear());
             LoadAllCommand = new RelayCommand(_ => LoadAll());
+            ExportCommand  = new RelayCommand(_ => ExportCsv(), _ => Publishers.Count > 0);
 
             LoadAll();
         }
@@ -129,7 +142,10 @@ namespace StarPublications.ViewModels
                     .ToList();
 
                 Application.Current.Dispatcher.Invoke(() =>
-                    Publishers = new ObservableCollection<Publisher>(publishers));
+                {
+                    Publishers = new ObservableCollection<Publisher>(publishers);
+                    ResultCount = $"📊  {publishers.Count} publishers";
+                });
 
                 StatusMessageChanged?.Invoke($"Loaded {publishers.Count} publishers.");
             });
@@ -137,6 +153,15 @@ namespace StarPublications.ViewModels
 
         private void Search()
         {
+            if (string.IsNullOrWhiteSpace(SearchName) &&
+                string.IsNullOrWhiteSpace(SearchCity) &&
+                string.IsNullOrWhiteSpace(SearchState) &&
+                string.IsNullOrWhiteSpace(SearchCountry))
+            {
+                LoadAll();
+                return;
+            }
+
             TryExecute(() =>
             {
                 using var ctx = DbContextFactory.Create();
@@ -158,7 +183,10 @@ namespace StarPublications.ViewModels
                 var results = query.OrderBy(p => p.PubName).ToList();
 
                 Application.Current.Dispatcher.Invoke(() =>
-                    Publishers = new ObservableCollection<Publisher>(results));
+                {
+                    Publishers = new ObservableCollection<Publisher>(results);
+                    ResultCount = $"📊  {results.Count} of {ctx.Publishers.Count()} publishers";
+                });
 
                 StatusMessageChanged?.Invoke($"Found {results.Count} matching publishers.");
             });
@@ -166,12 +194,13 @@ namespace StarPublications.ViewModels
 
         private void Clear()
         {
-            SearchName = string.Empty;
-            SearchCity = string.Empty;
-            SearchState = string.Empty;
+            _searchTimer.Stop();
+            SearchName    = string.Empty;
+            SearchCity    = string.Empty;
+            SearchState   = string.Empty;
             SearchCountry = string.Empty;
-            DetailTitles = string.Empty;
-            DetailPrInfo = string.Empty;
+            DetailTitles  = string.Empty;
+            DetailPrInfo  = string.Empty;
             SelectedPublisher = null;
             LoadAll();
         }
@@ -206,9 +235,36 @@ namespace StarPublications.ViewModels
             });
         }
 
+        private void ExportCsv()
+        {
+            var saved = CsvExporter.Export(
+                Publishers,
+                ["Pub ID", "Name", "City", "State", "Country"],
+                p =>
+                [
+                    p.PubId,
+                    p.PubName ?? string.Empty,
+                    p.City ?? string.Empty,
+                    p.State ?? string.Empty,
+                    p.Country ?? string.Empty
+                ],
+                "publishers");
+
+            if (saved)
+                StatusMessageChanged?.Invoke($"✅  Exported {Publishers.Count} publishers to CSV.");
+        }
+
+        // ── Helpers ───────────────────────────────────────────────────────────────
+
+        private void RestartSearchTimer()
+        {
+            _searchTimer.Stop();
+            _searchTimer.Start();
+        }
+
         private void TryExecute(Action action)
         {
-            IsLoading = true;
+            IsLoading    = true;
             ErrorMessage = string.Empty;
 
             try
